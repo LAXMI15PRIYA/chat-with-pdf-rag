@@ -41,7 +41,7 @@ if "messages" not in st.session_state:
 st.title("📄 Chat with PDF")
 
 st.write(
-    "Ask questions and get answers directly from your document."
+    "Upload a PDF and ask questions about its content."
 )
 
 
@@ -71,17 +71,21 @@ if uploaded_file is not None:
         f"Uploaded: {uploaded_file.name}"
     )
 
-
     new_file = (
         st.session_state.file_name
         != uploaded_file.name
     )
 
-
-    st.session_state.file_name = uploaded_file.name
-
-
     if new_file:
+
+        st.session_state.file_name = uploaded_file.name
+
+        st.session_state.messages = []
+
+        st.session_state.chunks = None
+
+        st.session_state.index = None
+
 
         with tempfile.NamedTemporaryFile(
             delete=False,
@@ -103,18 +107,21 @@ if uploaded_file is not None:
 
             documents = loader.load()
 
-        except Exception:
+        except Exception as e:
 
             st.error(
                 "Could not read the PDF."
+            )
+
+            st.write(
+                str(e)
             )
 
             st.stop()
 
 
         st.write(
-            "Number of pages:",
-            len(documents)
+            f"Number of pages: {len(documents)}"
         )
 
 
@@ -130,8 +137,7 @@ if uploaded_file is not None:
 
 
         st.write(
-            "Number of chunks:",
-            len(chunks)
+            f"Number of chunks: {len(chunks)}"
         )
 
 
@@ -156,7 +162,7 @@ if uploaded_file is not None:
             )
 
 
-        model = st.session_state.model
+        embedding_model = st.session_state.model
 
 
         texts = [
@@ -165,7 +171,7 @@ if uploaded_file is not None:
         ]
 
 
-        vectors = model.encode(
+        vectors = embedding_model.encode(
             texts
         )
 
@@ -181,14 +187,12 @@ if uploaded_file is not None:
 
 
         st.write(
-            "Number of vectors:",
-            len(vectors)
+            f"Number of vectors: {len(vectors)}"
         )
 
 
         st.write(
-            "Vector size:",
-            vectors.shape[1]
+            f"Vector size: {vectors.shape[1]}"
         )
 
 
@@ -211,8 +215,7 @@ if uploaded_file is not None:
 
 
         st.write(
-            "Number of vectors in FAISS:",
-            index.ntotal
+            f"Number of vectors in FAISS: {index.ntotal}"
         )
 
 
@@ -233,7 +236,7 @@ if uploaded_file is not None:
 
             if "source" in message:
 
-                st.write(
+                st.caption(
                     f"📄 {message['source']}"
                 )
 
@@ -260,14 +263,14 @@ if uploaded_file is not None:
         )
 
 
-        model = st.session_state.model
+        embedding_model = st.session_state.model
 
         index = st.session_state.index
 
         chunks = st.session_state.chunks
 
 
-        question_vector = model.encode(
+        question_vector = embedding_model.encode(
             [question]
         )
 
@@ -288,13 +291,15 @@ if uploaded_file is not None:
 
         for index_number in indices[0]:
 
-            retrieved_chunks.append(
-                chunks[index_number]
-            )
+            if index_number >= 0:
+
+                retrieved_chunks.append(
+                    chunks[index_number]
+                )
 
 
         with st.expander(
-            "🔍 View Sources"
+            "🔍 View Retrieved Sources"
         ):
 
             for i, chunk in enumerate(
@@ -311,10 +316,15 @@ if uploaded_file is not None:
 
                     page = page + 1
 
+                    st.write(
+                        f"Source {i} — Page {page}"
+                    )
 
-                st.write(
-                    f"Source {i} — Page {page}"
-                )
+                else:
+
+                    st.write(
+                        f"Source {i}"
+                    )
 
 
                 st.write(
@@ -376,35 +386,38 @@ if uploaded_file is not None:
 
             st.error(
                 "GROQ_API_KEY was not found. "
-                "Please check your .env file."
+                "Please add it to Streamlit Secrets."
             )
 
             st.stop()
 
 
         llm = ChatGroq(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-20b",
             temperature=0,
             api_key=api_key
         )
 
 
         prompt = f"""
-Answer the question using only the following context.
+You are a helpful PDF question-answering assistant.
 
-If the answer is not present in the context,
-say:
-
-"I don't know based on the provided PDF."
+Answer the user's question using ONLY the information
+provided in the context below.
 
 Do not use outside knowledge.
 
-Context:
+If the answer cannot be found in the context,
+respond exactly with:
 
+I don't know based on the provided PDF.
+
+Keep the answer clear and beginner-friendly.
+
+Context:
 {context}
 
 Question:
-
 {question}
 """
 
@@ -418,7 +431,7 @@ Question:
         except Exception as e:
 
             st.error(
-                "Something went wrong while generating the answer."
+                "The Groq model could not generate the answer."
             )
 
             st.write(
@@ -436,7 +449,7 @@ Question:
                 response.content
             )
 
-            st.write(
+            st.caption(
                 f"📄 {source_text}"
             )
 
