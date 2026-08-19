@@ -8,9 +8,9 @@ A Retrieval-Augmented Generation (RAG) application that lets you upload any PDF 
 
 ## 🎥 Preview
 
-| App Interface | Deployed App |
+| Embedding & FAISS Indexing | Deployed App |
 |---|---|
-| ![App](app.png) | ![Deployed App](deployed-app.png) |
+| ![Embedding & FAISS Indexing](Embedding%20&%20FAISS%20Indexing.png) | ![Deployed App](deployed-app.png) |
 
 **Source Citations**
 ![Sources](sources.png)
