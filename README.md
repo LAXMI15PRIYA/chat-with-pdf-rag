@@ -8,9 +8,7 @@ A Retrieval-Augmented Generation (RAG) application that lets you upload any PDF 
 
 ## 🎥 Preview
 
-| Embedding & FAISS Indexing | Deployed App |
-|---|---|
-| ![Embedding & FAISS Indexing](Embedding%20&%20FAISS%20Indexing.png) | ![Deployed App](deployed-app.png) |
+![Deployed App](deployed-app.png)
 
 **Source Citations**
 ![Sources](sources.png)
@@ -137,4 +135,5 @@ M.Tech AI & Data Science | Building AI Engineer portfolio projects
 ## 📄 License
 
 This project is open source and available under the [MIT License](LICENSE).
+
 
